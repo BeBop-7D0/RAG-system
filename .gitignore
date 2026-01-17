@@ -1,0 +1,5 @@
+.idea/
+.venv/
+venv/
+env/
+gh_token.txt.txt
