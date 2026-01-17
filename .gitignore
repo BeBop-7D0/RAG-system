@@ -1,5 +1,6 @@
 .idea/
 .venv/
 venv/
-env/
-gh_token.txt.txt
+.env
+ingestion-service/test_files/*
+!ingestion-service/test_files/.gitignore
