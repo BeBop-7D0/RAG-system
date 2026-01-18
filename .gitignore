@@ -3,4 +3,4 @@
 venv/
 .env
 ingestion-service/test_files/*
-!ingestion-service/test_files/.gitignore
+!ingestion-service/test_files/.gitkeep
