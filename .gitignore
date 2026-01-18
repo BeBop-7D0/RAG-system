@@ -4,3 +4,4 @@ venv/
 .env
 ingestion-service/test_files/*
 !ingestion-service/test_files/.gitkeep
+gh_token.txt.txt
