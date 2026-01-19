@@ -17,11 +17,35 @@ class DOCXProcessor(DocProcessor):
 
 
     @staticmethod
-    def __normalize(text: str) -> str:
+    def __normalize(raw_text: str) -> str:
         """Нормализация текста (удаление лишних пробелов, непечатаемых символов)"""
-        print(text)
+        # удаление лишних пробелов и переносов
+        text = re.sub(r"\s+", " ", raw_text).strip()
+
+        # нормализация пунктуации
+        text = re.sub(r"([!?.,:;]){2,}", r"\1", text)
+
+        # стандартизация кавычек
+        text = re.sub(r'[«»"”“]', r'"', text)
+
         return text
 
+
+    @staticmethod
+    def __replace_sensitive_data(raw_text: str) -> str:
+        # замена url-ссылок на <URL>
+        url_pattern = r'https?://[^\s]+|www\.[^\s]+\b'
+        text = re.sub(url_pattern, r"<URL>", raw_text)
+
+        # замена номеров телефона на <PHONE>
+        phone_pattern = r'(?:\+7|8)?[-\s]?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}\b'
+        text = re.sub(phone_pattern, r"<PHONE>", text)
+
+        # замна адресов почты на <EMAIL>
+        email_pattern = r'[\w.+%-]+@[\w-]+\.\w{2,}'
+        text = re.sub(email_pattern, r"<EMAIL>", text)
+
+        return text
 
     def parse(self):
         """
@@ -33,32 +57,25 @@ class DOCXProcessor(DocProcessor):
 
         doc = Document(self.file)
         for paragraph in doc.paragraphs[:5]:
-            clean_text = self.__normalize(paragraph.text)
-
+            normalized_text = self.__normalize(paragraph.text)
+            no_sensitive_text = self.__replace_sensitive_data(normalized_text)
 
 
 
 def main():
 
-    # with open("../../../test_files/simple_file.docx", 'rb') as f:
-    #     binary_file = f.read()
-    #
-    # parser = DOCXProcessor(binary_file)
-    # parser.parse()
+    with open("../../../test_files/simple_file.docx", 'rb') as f:
+        binary_file = f.read()
 
-    bad_tet = """Привет!!! Как твои дела????))  
-я вчера купил iPhone 15 Pro Max за 150.000 руб... но он оказался БРАКОВАННЫМ!!! 😡  
-Связался со службой поддержки: support@company.ru — НИКТО НЕ ОТВЕЧАЕТ!!!  
-Звонил по номеру +7 (999) 123-45-67 и даже писал в WhatsApp (https://wa.me/79991234567).  
-P.S. Сайт у них — https://www.company.ru, но он не грузится уже 3 дня...  
-#фейл #развод #не_покупайте  
+    parser = DOCXProcessor(binary_file)
+    parser.parse()
 
-P.P.S. Мой email для обратной связи: ivanov_ivan1990@gmail.com или ivan@ivanov.ru  
-(но лучше не пишите — я в отпуске до 01.09.2025!)"""
 
-    step_1 = re.sub(r"\s+"," ", bad_tet)  # удаляем все ли
-    step_2 = re.sub(r"([!?*.])\1+", r"\1", step_1)
-    print(step_1)
+    print(text)
+
+
+
+
 
 if __name__ == "__main__":
     main()
