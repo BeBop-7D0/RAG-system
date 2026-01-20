@@ -7,7 +7,6 @@ class DocProcessor(ABC):
     def __init__(self, file: bytes):
         pass
 
-
     @abstractmethod
     def parse(self):
         """метод для парсинга входящего файла"""

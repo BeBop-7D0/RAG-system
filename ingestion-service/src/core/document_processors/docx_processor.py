@@ -1,8 +1,9 @@
 import io
 import re
+from typing import List
 
 from docx import Document
-
+from docx.text.paragraph import Paragraph
 
 from base_processor import DocProcessor
 
@@ -14,7 +15,6 @@ class DOCXProcessor(DocProcessor):
 
     def __init__(self, file: bytes):
         self.file = io.BytesIO(file)
-
 
     @staticmethod
     def __normalize(raw_text: str) -> str:
@@ -29,7 +29,6 @@ class DOCXProcessor(DocProcessor):
         text = re.sub(r'[«»"”“]', r'"', text)
 
         return text
-
 
     @staticmethod
     def __replace_sensitive_data(raw_text: str) -> str:
@@ -47,6 +46,27 @@ class DOCXProcessor(DocProcessor):
 
         return text
 
+    @staticmethod
+    def __filter_short_paragraphs(paragraphs: List[Paragraph], min_len: int = 20) -> List[str]:
+        filtered_list = list(filter(lambda x: len(x.text.strip()) >= min_len, paragraphs))
+        return list(map(lambda x: x.text, filtered_list))
+
+    @staticmethod
+    def __join_short_split_long_paragraphs(paragraphs: List[str], min_len_for_join: int = 70,
+                                           min_len_for_split: int = 200, target_len: int = 100):
+        processed_list = []
+        for idx in range(len(paragraphs) - 1):
+            cur = paragraphs[idx]
+            next = paragraphs[idx + 1]
+            if len(cur) <= min_len_for_join:
+                processed_list.append(cur + next)
+            else:
+                processed_list.append(cur)
+
+            if len(cur) >= min_len_for_split:
+                pass  # todo реализовать логику разбиения параграфов на части
+        return processed_list
+
     def parse(self):
         """
         Извлечение сырого содержимого из .docx
@@ -56,10 +76,19 @@ class DOCXProcessor(DocProcessor):
         """
 
         doc = Document(self.file)
-        for paragraph in doc.paragraphs[:5]:
-            normalized_text = self.__normalize(paragraph.text)
-            no_sensitive_text = self.__replace_sensitive_data(normalized_text)
+        filtered_paragraphs = self.__filter_short_paragraphs(doc.paragraphs)
 
+        for paragraph in filtered_paragraphs:
+            normalized_text = self.__normalize(paragraph)
+            no_sensitive_text = self.__replace_sensitive_data(normalized_text)
+            # print(len(normalized_text))
+
+        filtered_paragraphs = self.__join_short_split_long_paragraphs(filtered_paragraphs)
+
+        for paragraph in filtered_paragraphs:
+            normalized_text = self.__normalize(paragraph)
+            no_sensitive_text = self.__replace_sensitive_data(normalized_text)
+            print(len(normalized_text))
 
 
 def main():
@@ -70,8 +99,6 @@ def main():
     parser = DOCXProcessor(binary_file)
     parser.parse()
 
-
-    print(text)
 
 
 
