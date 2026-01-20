@@ -52,20 +52,76 @@ class DOCXProcessor(DocProcessor):
         return list(map(lambda x: x.text, filtered_list))
 
     @staticmethod
-    def __join_short_split_long_paragraphs(paragraphs: List[str], min_len_for_join: int = 70,
-                                           min_len_for_split: int = 200, target_len: int = 100):
-        processed_list = []
-        for idx in range(len(paragraphs) - 1):
-            cur = paragraphs[idx]
-            next = paragraphs[idx + 1]
-            if len(cur) <= min_len_for_join:
-                processed_list.append(cur + next)
-            else:
-                processed_list.append(cur)
+    def __join_short_split_long_paragraphs(
+            paragraphs: List[str],
+            min_len_for_join: int = 70,
+            min_len_for_split: int = 200,
+            max_len_for_chunk: int = 100
+    ) -> List[str]:
 
-            if len(cur) >= min_len_for_split:
-                pass  # todo реализовать логику разбиения параграфов на части
-        return processed_list
+        merged = []
+        i = 0
+        while i < len(paragraphs):
+            current = paragraphs[i]
+            if len(current) <= min_len_for_join and i + 1 < len(paragraphs):
+                next_para = paragraphs[i + 1]
+                combined = current + " " + next_para
+                merged.append(combined)
+                i += 2
+            else:
+                merged.append(current)
+                i += 1
+
+        # Этап 2: Разбиение длинных чанков
+        result = []
+        # Используем finditer, чтобы сохранить знаки препинания
+        sentence_endings = re.compile(r'[.!?]+')
+
+        for chunk in merged:
+            if len(chunk) <= min_len_for_split:
+                result.append(chunk)
+            else:
+                # Получаем позиции концов предложений
+                sentences = []
+                start = 0
+                for match in sentence_endings.finditer(chunk):
+                    end = match.end()  # включаем знак препинания
+                    sentence = chunk[start:end].strip()
+                    if sentence:
+                        sentences.append(sentence)
+                    start = end
+
+                # Добавляем остаток текста (если есть)
+                remainder = chunk[start:].strip()
+                if remainder:
+                    sentences.append(remainder)
+
+                # Собираем чанки до max_len_for_chunk
+                current_chunk = ""
+                for sent in sentences:
+                    # Если предложение само слишком длинное — добавляем как есть
+                    if len(sent) > max_len_for_chunk:
+                        if current_chunk:
+                            result.append(current_chunk)
+                            current_chunk = ""
+                        result.append(sent)
+                        continue
+
+                    # Проверяем, поместится ли предложение в текущий чанк
+                    new_chunk = current_chunk + (" " if current_chunk else "") + sent
+                    if len(new_chunk) <= max_len_for_chunk:
+                        current_chunk = new_chunk
+                    else:
+                        # Сохраняем текущий чанк и начинаем новый
+                        if current_chunk:
+                            result.append(current_chunk)
+                        current_chunk = sent
+
+                # Не забываем последний чанк
+                if current_chunk:
+                    result.append(current_chunk)
+
+        return result
 
     def parse(self):
         """
