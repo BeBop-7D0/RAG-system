@@ -47,81 +47,72 @@ class DOCXProcessor(DocProcessor):
         return text
 
     @staticmethod
-    def __filter_short_paragraphs(paragraphs: List[Paragraph], min_len: int = 20) -> List[str]:
-        filtered_list = list(filter(lambda x: len(x.text.strip()) >= min_len, paragraphs))
-        return list(map(lambda x: x.text, filtered_list))
-
-    @staticmethod
     def __join_short_split_long_paragraphs(
-            paragraphs: List[str],
+            paragraphs: List[Paragraph],
+            min_paragraphs_len: int = 20,
             min_len_for_join: int = 70,
             min_len_for_split: int = 200,
             max_len_for_chunk: int = 100
     ) -> List[str]:
+        """
+        Объединение коротких и разделение длинных параграфов
+        :param paragraphs:  Список текстов параграфов
+        :param min_paragraphs_len: Минимальная длинна параграфа
+        :param min_len_for_join: Минимальная длина для объединения параграфов
+        :param min_len_for_split: Максимальная длина параграфа перед разделением
+        :param max_len_for_chunk: Максимальный размер чанка после разделения
+        :return:
+        """
 
+        cur_chunk = ""
         merged = []
-        i = 0
-        while i < len(paragraphs):
-            current = paragraphs[i]
-            if len(current) <= min_len_for_join and i + 1 < len(paragraphs):
-                next_para = paragraphs[i + 1]
-                combined = current + " " + next_para
-                merged.append(combined)
-                i += 2
+        for paragraph in paragraphs:
+            paragraph_stripped = paragraph.text.strip()
+
+            # Пропускаем слишком короткие параграфы
+            if not paragraph_stripped or len(paragraph_stripped) < min_paragraphs_len:
+                continue
+
+            if len(cur_chunk) <= min_len_for_join:
+                if cur_chunk:
+                    cur_chunk = f"{cur_chunk} {paragraph_stripped}"
+                else:
+                    cur_chunk = paragraph_stripped
             else:
-                merged.append(current)
-                i += 1
+                if cur_chunk:
+                    merged.append(cur_chunk)
+                cur_chunk = paragraph_stripped
+        if cur_chunk:
+            merged.append(cur_chunk)
 
-        # Этап 2: Разбиение длинных чанков
-        result = []
-        # Используем finditer, чтобы сохранить знаки препинания
-        sentence_endings = re.compile(r'[.!?]+')
+        final_chunks = []
 
-        for chunk in merged:
-            if len(chunk) <= min_len_for_split:
-                result.append(chunk)
-            else:
-                # Получаем позиции концов предложений
-                sentences = []
-                start = 0
-                for match in sentence_endings.finditer(chunk):
-                    end = match.end()  # включаем знак препинания
-                    sentence = chunk[start:end].strip()
-                    if sentence:
-                        sentences.append(sentence)
-                    start = end
+        for paragraph in merged:
+            paragraph_stripped = paragraph.strip()
+            if not paragraph_stripped:
+                continue
 
-                # Добавляем остаток текста (если есть)
-                remainder = chunk[start:].strip()
-                if remainder:
-                    sentences.append(remainder)
+            if len(paragraph_stripped) <= min_len_for_split:
+                final_chunks.append(paragraph_stripped)
+                continue
 
-                # Собираем чанки до max_len_for_chunk
-                current_chunk = ""
-                for sent in sentences:
-                    # Если предложение само слишком длинное — добавляем как есть
-                    if len(sent) > max_len_for_chunk:
-                        if current_chunk:
-                            result.append(current_chunk)
-                            current_chunk = ""
-                        result.append(sent)
-                        continue
+            sentences = re.split(r'(?<=[.!?])\s+', paragraph_stripped)
+            cur_chunk = ""
+            for sent in sentences:
+                if not sent.strip():
+                    continue
+                sent = sent.strip()
+                needed_length = len(cur_chunk) + (1 + len(sent) if cur_chunk else len(sent))
+                if needed_length <= max_len_for_chunk:
+                    cur_chunk = f"{cur_chunk} {sent}" if cur_chunk else sent
+                else:
+                    if cur_chunk:
+                        final_chunks.append(cur_chunk)
+                    cur_chunk = sent
+            if cur_chunk:
+                final_chunks.append(cur_chunk)
 
-                    # Проверяем, поместится ли предложение в текущий чанк
-                    new_chunk = current_chunk + (" " if current_chunk else "") + sent
-                    if len(new_chunk) <= max_len_for_chunk:
-                        current_chunk = new_chunk
-                    else:
-                        # Сохраняем текущий чанк и начинаем новый
-                        if current_chunk:
-                            result.append(current_chunk)
-                        current_chunk = sent
-
-                # Не забываем последний чанк
-                if current_chunk:
-                    result.append(current_chunk)
-
-        return result
+        return merged
 
     def parse(self):
         """
@@ -132,19 +123,14 @@ class DOCXProcessor(DocProcessor):
         """
 
         doc = Document(self.file)
-        filtered_paragraphs = self.__filter_short_paragraphs(doc.paragraphs)
 
-        for paragraph in filtered_paragraphs:
-            normalized_text = self.__normalize(paragraph)
-            no_sensitive_text = self.__replace_sensitive_data(normalized_text)
-            # print(len(normalized_text))
-
-        filtered_paragraphs = self.__join_short_split_long_paragraphs(filtered_paragraphs)
+        filtered_paragraphs = self.__join_short_split_long_paragraphs(doc.paragraphs)
 
         for paragraph in filtered_paragraphs:
             normalized_text = self.__normalize(paragraph)
             no_sensitive_text = self.__replace_sensitive_data(normalized_text)
             print(len(normalized_text))
+
 
 
 def main():
