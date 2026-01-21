@@ -102,9 +102,12 @@ class DOCXProcessor(DocProcessor):
                 if not sent.strip():
                     continue
                 sent = sent.strip()
-                needed_length = len(cur_chunk) + (1 + len(sent) if cur_chunk else len(sent))
-                if needed_length <= max_len_for_chunk:
-                    cur_chunk = f"{cur_chunk} {sent}" if cur_chunk else sent
+
+                if len(cur_chunk) + len(sent) + 1 <= max_len_for_chunk:
+                    if cur_chunk:
+                        cur_chunk = f"{cur_chunk} {sent}"
+                    else:
+                        cur_chunk = sent
                 else:
                     if cur_chunk:
                         final_chunks.append(cur_chunk)
@@ -112,7 +115,7 @@ class DOCXProcessor(DocProcessor):
             if cur_chunk:
                 final_chunks.append(cur_chunk)
 
-        return merged
+        return final_chunks
 
     def parse(self):
         """
