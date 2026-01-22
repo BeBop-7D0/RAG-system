@@ -4,10 +4,6 @@ from abc import ABC, abstractmethod
 class DocProcessor(ABC):
 
     @abstractmethod
-    def __init__(self, file: bytes):
-        pass
-
-    @abstractmethod
-    def parse(self):
+    def parse(self, file: bytes, filename: str):
         """метод для парсинга входящего файла"""
         pass

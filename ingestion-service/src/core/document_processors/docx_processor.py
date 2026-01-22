@@ -1,20 +1,18 @@
 import io
 import re
 from typing import List
+from hashlib import md5
 
 from docx import Document
 from docx.text.paragraph import Paragraph
 
 from base_processor import DocProcessor
-
+from data_models.document_processor_models import MetadataModel, ChunkModel
 
 class DOCXProcessor(DocProcessor):
     """Класс, реализующий методы для обработки
     .docx файлов
     """
-
-    def __init__(self, file: bytes):
-        self.file = io.BytesIO(file)
 
     @staticmethod
     def __normalize(raw_text: str) -> str:
@@ -99,9 +97,12 @@ class DOCXProcessor(DocProcessor):
             sentences = re.split(r'(?<=[.!?])\s+', paragraph_stripped)
             cur_chunk = ""
             for sent in sentences:
-                if not sent.strip():
-                    continue
                 sent = sent.strip()
+                if len(sent) < 5:
+                    continue
+
+                if sent and all(c in '.,!?;:()[]{}"\' ' for c in sent):
+                    continue
 
                 if len(cur_chunk) + len(sent) + 1 <= max_len_for_chunk:
                     if cur_chunk:
@@ -117,7 +118,37 @@ class DOCXProcessor(DocProcessor):
 
         return final_chunks
 
-    def parse(self):
+    def __create_chunks(self,
+                        text: str,
+                        filename: str,
+                        file_hash: str,
+                        paragraph_idx: int
+                        ) -> ChunkModel:
+        """Создает чанки и наполняет их метаинформацией"""
+
+        normalized_text = self.__normalize(text)
+        no_sensitive_text = self.__replace_sensitive_data(normalized_text)
+
+        char_count = len(normalized_text)
+        word_count = len(normalized_text.split())
+
+        metadata = MetadataModel(
+            doc_id=file_hash,
+            chunk_id=f"{file_hash}_chunk_{paragraph_idx}",
+            source=filename,
+            chunk_index=paragraph_idx,
+            char_count=char_count,
+            word_count=word_count
+        )
+
+        return ChunkModel(
+            text=normalized_text,
+            text_sensitive_removed=no_sensitive_text,
+            metadata=metadata,
+            vectorization_text='text_sensitive_removed'
+        )
+
+    def parse(self, file: bytes, filename: str = 'test.docx'):
         """
         Извлечение сырого содержимого из .docx
         Структурный анализ документа (выделение заголовков, списков, таблиц)
@@ -125,15 +156,22 @@ class DOCXProcessor(DocProcessor):
         Реконструкция логического потока текста (соединение разрывов)
         """
 
-        doc = Document(self.file)
+        binary_file = file
+        file = io.BytesIO(binary_file)
+        file_hash = md5(binary_file).hexdigest()[:8]
 
+        chunks: List[ChunkModel] = []
+        doc = Document(file)
         filtered_paragraphs = self.__join_short_split_long_paragraphs(doc.paragraphs)
 
-        for paragraph in filtered_paragraphs:
-            normalized_text = self.__normalize(paragraph)
-            no_sensitive_text = self.__replace_sensitive_data(normalized_text)
-            print(len(normalized_text))
+        for idx, paragraph in enumerate(filtered_paragraphs):
+            chunks.append(self.__create_chunks(text=paragraph,
+                                               filename=filename,
+                                               file_hash=file_hash,
+                                               paragraph_idx=idx
+                                               ))
 
+        return chunks
 
 
 def main():
@@ -141,12 +179,9 @@ def main():
     with open("../../../test_files/simple_file.docx", 'rb') as f:
         binary_file = f.read()
 
-    parser = DOCXProcessor(binary_file)
-    parser.parse()
-
-
-
-
+    parser = DOCXProcessor()
+    chunks = parser.parse(binary_file)
+    print(chunks[0].model_dump_json(indent=2))
 
 
 if __name__ == "__main__":
