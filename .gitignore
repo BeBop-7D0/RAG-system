@@ -4,4 +4,6 @@ venv/
 .env
 ingestion-service/test_files/*
 !ingestion-service/test_files/.gitkeep
+infra/Qdrant/storage/*
+!infra/Qdrant/storage/.gitkeep
 gh_token.txt.txt
