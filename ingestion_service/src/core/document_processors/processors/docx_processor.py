@@ -6,8 +6,10 @@ from hashlib import md5
 from docx import Document
 from docx.text.paragraph import Paragraph
 
-from base_processor import DocProcessor
-from data_models.document_processor_models import MetadataModel, ChunkModel
+from ingestion_service.src.core.document_processors.base_processor import DocProcessor
+from ingestion_service.src.core.document_processors.data_models.document_processor_models import (MetadataModel,
+                                                                                                  ChunkModel)
+
 
 class DOCXProcessor(DocProcessor):
     """Класс, реализующий методы для обработки
