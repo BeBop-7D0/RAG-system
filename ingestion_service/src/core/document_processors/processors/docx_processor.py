@@ -163,7 +163,7 @@ class DOCXProcessor(DocProcessor):
             vectorization_text='text_sensitive_removed'
         )
 
-    def parse(self, file: bytes, filename: str = 'test.docx'):
+    def parse(self, file: bytes, filename: str = 'test.docx') -> List[ChunkModel]:
         """
         Извлечение сырого содержимого из .docx
         Структурный анализ документа (выделение заголовков, списков, таблиц)
