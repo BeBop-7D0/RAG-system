@@ -1,5 +1,5 @@
-from processors.docx_processor import DOCXProcessor
-from base_processor import DocProcessor
+from ingestion_service.src.core.document_processors.processors.docx_processor import DOCXProcessor
+from ingestion_service.src.core.document_processors.base_processor import DocProcessor
 
 
 class DocProcessorFactory:
@@ -10,4 +10,5 @@ class DocProcessorFactory:
 
     def __getitem__(self, item) -> DocProcessor:
         return self.processors.get(item)
+
 

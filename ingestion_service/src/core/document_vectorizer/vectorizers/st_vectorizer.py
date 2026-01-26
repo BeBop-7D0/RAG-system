@@ -36,12 +36,25 @@ class SentenceTransformerEmbedder(BaseVectorizer):
                 device = 'cuda' if torch.cuda.is_available() else 'cpu'
                 if device == 'cuda':
                     logger.info(f"Используется устройство CUDA: {torch.cuda.get_device_name(0)}")
+            try:
+                self.model = SentenceTransformer(
+                    model_name_or_path=self.config.model_name,
+                    device=device,
+                    local_files_only=True,
+                    **kwargs
+                )
+                logger.info(f"Модель загружена из локального кэша: {self.config.model_name}")
+            except (OSError, FileNotFoundError) as error_msg:
 
-            self.model = SentenceTransformer(
-                model_name_or_path=self.config.model_name,
-                device=device,
-                **kwargs
-            )
+                logger.info(f"Модель {self.config.model_name} не найдена в локальном кэше, выполняется "
+                            f"загрузка с Hugging Face...")
+
+                self.model = SentenceTransformer(
+                    model_name_or_path=self.config.model_name,
+                    device=device,
+                    **kwargs
+                )
+                logger.info(f"Модель успешно загружена с Hugging Face: {self.config.model_name}")
 
             if self.config.max_seq_length:
                 self.model.max_seq_length = self.config.max_seq_length
@@ -77,7 +90,7 @@ class SentenceTransformerEmbedder(BaseVectorizer):
 
     def embed_single(self, text: str) -> np.ndarray:
         """Метод для векторизации одного текста"""
-        return self.embed([text])
+        return self.embed([text])[0]
 
     @property
     def dimension(self) -> int:
@@ -108,6 +121,18 @@ def main():
     )
 
     vectorizer = SentenceTransformerEmbedder(config)
+
+    texts = [
+        'some_text',
+        'another text',
+        'ou, this is a new text!'
+    ]
+    single_vector = vectorizer.embed_single(texts[0])
+
+    vectors = vectorizer.embed(texts)
+
+    print(np.shape(single_vector))
+    print(np.shape(vectors))
 
 
 if __name__ == "__main__":
