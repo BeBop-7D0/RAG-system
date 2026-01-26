@@ -3,8 +3,6 @@ from typing import List, Dict, Any
 
 import numpy as np
 
-from ingestion_service.src.core.document_vectorizer.data_models.embedding_config import EmbeddingConfig
-
 
 class BaseVectorizer(ABC):
     """Базовый класс для всех векторизатовров"""

@@ -15,9 +15,9 @@ class EmbeddingModelType(Enum):
 class EmbeddingConfig(BaseModel):
     model_type: EmbeddingModelType
     model_name: str
-    batch_size:  int = 32
-    normalize_embeddings: bool = True
-    device: Optional[str] = None
-    api_key: Optional[str] = None
-    cache_dir: Optional[str] = None
-    max_seq_length: Optional[int] = 512
+    batch_size:  int
+    normalize_embeddings: bool
+    device: Optional[str]
+    api_key: Optional[str]
+    cache_dir: Optional[str]
+    max_seq_length: Optional[int]

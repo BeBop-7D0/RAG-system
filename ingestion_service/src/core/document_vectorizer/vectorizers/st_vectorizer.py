@@ -1,4 +1,7 @@
-from typing import Optional, Dict, Any
+import sys
+from typing import Optional, Dict, Any, List
+import logging
+
 
 import torch
 import numpy as np
@@ -8,13 +11,15 @@ from ingestion_service.src.core.document_vectorizer.base_vectorizer import BaseV
 from ingestion_service.src.core.document_vectorizer.data_models.embedding_config import EmbeddingConfig
 
 
+logger = logging.getLogger('ChunkVectorizer')
+
+
 class SentenceTransformerEmbedder(BaseVectorizer):
     """Векторизатор на основе Sentence Transformers"""
 
     def __init__(self, config: EmbeddingConfig):
         self.config = config
         self._initialize_model()
-
 
     def _initialize_model(self):
         """Инициализация модели"""
@@ -30,7 +35,7 @@ class SentenceTransformerEmbedder(BaseVectorizer):
             else:
                 device = 'cuda' if torch.cuda.is_available() else 'cpu'
                 if device == 'cuda':
-                    print(f"Используется устройство CUDA: {torch.cuda.get_device_name(0)}")
+                    logger.info(f"Используется устройство CUDA: {torch.cuda.get_device_name(0)}")
 
             self.model = SentenceTransformer(
                 model_name_or_path=self.config.model_name,
@@ -41,9 +46,68 @@ class SentenceTransformerEmbedder(BaseVectorizer):
             if self.config.max_seq_length:
                 self.model.max_seq_length = self.config.max_seq_length
 
-            print(f"Загружена модель: {self.config.model_name}")
-            print(f"Размерность эмбединга: {self.model.get_sentence_embedding_dimension()}")
-            print(f"Максимальная длинна входной последовательности: {self.model.max_seq_length}")
+            logger.info(f"Загружена модель: {self.config.model_name}")
+            logger.info(f"Размерность эмбединга: {self.model.get_sentence_embedding_dimension()}")
+            logger.info(f"Максимальная длинна входной последовательности: {self.model.max_seq_length}")
 
         except Exception as error_msg:
-            print(f"Ошибка загрузки модели {self.config.model_name}: {error_msg}")
+            logger.error(f"Ошибка загрузки модели {self.config.model_name}: {error_msg}")
+
+    def embed(self,  texts: List[str]) -> np.ndarray:
+        """Векторизация батча текста"""
+
+        if not texts:
+            return np.ndarray([])
+
+        try:
+            embeddings = self.model.encode(
+                sentences=texts,
+                batch_size=self.config.batch_size,
+                show_progress_bar=False,
+                convert_to_numpy=True,
+                convert_to_tensor=False,
+                normalize_embeddings=self.config.normalize_embeddings
+            )
+
+            return embeddings
+
+        except Exception as error_msg:
+            logger.error(f"Ошибка во время векторизации: {error_msg}")
+            raise
+
+    def embed_single(self, text: str) -> np.ndarray:
+        """Метод для векторизации одного текста"""
+        return self.embed([text])
+
+    @property
+    def dimension(self) -> int:
+        """Возвращает размерность эмбедингов"""
+        return self.model.get_sentence_embedding_dimension()
+
+    @property
+    def model_info(self) -> Dict[str, Any]:
+        """Возвращает информацию по модели"""
+        return {
+            "model_type": self.config.model_type,
+            "model_name": self.config.model_name,
+            "dimension": self.dimension,
+            "max_seq_length": self.model.max_seq_length,
+            "normalize_embeddings": self.config.normalize_embeddings
+        }
+
+
+def main():
+    from ..config import config
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s | %(levelname)s | %(name)s : %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        stream=sys.stdout
+    )
+
+    vectorizer = SentenceTransformerEmbedder(config)
+
+
+if __name__ == "__main__":
+    main()

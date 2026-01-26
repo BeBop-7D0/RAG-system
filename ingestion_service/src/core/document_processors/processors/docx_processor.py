@@ -201,8 +201,7 @@ def main():
         stream=sys.stdout
     )
 
-
-    file_path = Path('E:\\Denis\\OtherProjects\\RAGSystem\\ingestion_service\\test_files\\simple_file.docx')
+    file_path = Path(__file__).parent.parent.parent.parent.parent / 'test_files/simple_file.docx'
     with open(file_path, 'rb') as f:
         binary_file = f.read()
 
