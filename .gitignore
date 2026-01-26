@@ -2,9 +2,13 @@
 .venv/
 venv/
 
+
+!ingestion_service/test_files/.gitkeep
 ingestion_service/test_files/*
-/ingestion_service/.env
-!/ingestion_service/test_files/.gitkeep
+ingestion_service/logs/*
+!ingestion_service/logs/.gitkeep
+ingestion_service/.env
+
 
 
 ingestion_service/l
