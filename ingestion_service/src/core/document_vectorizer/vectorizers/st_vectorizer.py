@@ -28,7 +28,7 @@ class SentenceTransformerEmbedder(BaseVectorizer):
             kwargs = {}
 
             if self.config.cache_dir:
-                kwargs['cashe_folder'] = self.config.cache_dir
+                kwargs['cache_folder'] = self.config.cache_dir
 
             if self.config.device:
                 device = self.config.device
@@ -97,7 +97,8 @@ class SentenceTransformerEmbedder(BaseVectorizer):
 
 
 def main():
-    from ..config import config
+
+    from ingestion_service.src.core.document_vectorizer.config import config
 
     logging.basicConfig(
         level=logging.DEBUG,

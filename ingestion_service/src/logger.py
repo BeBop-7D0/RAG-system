@@ -8,8 +8,8 @@ load_dotenv()
 
 
 def setup_logging():
-    log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
-    log_path = Path(os.getenv('LOG_PATH', './logs'))
+    log_level = os.getenv('INGESTION_SERVICE_LOG_LEVEL', 'INFO').upper()
+    log_path = Path(os.getenv('INGESTION_SERVICE_LOG_PATH', './logs'))
     log_path.mkdir(parents=True, exist_ok=True)
 
     logging_config = {

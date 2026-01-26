@@ -2,13 +2,18 @@
 .venv/
 venv/
 
-
+# ===========Ingestion Service===========
 !ingestion_service/test_files/.gitkeep
 ingestion_service/test_files/*
-ingestion_service/logs/*
-!ingestion_service/logs/.gitkeep
-ingestion_service/.env
 
+!ingestion_service/logs/.gitkeep
+ingestion_service/logs/*
+
+!ingestion_service/models_cache/.gitkeep
+ingestion_service/models_cache/*
+
+ingestion_service/.env
+# ========================================
 
 gh_token.txt.txt
 
