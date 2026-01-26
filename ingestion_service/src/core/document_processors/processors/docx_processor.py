@@ -5,22 +5,30 @@ from pathlib import Path
 from typing import List
 from hashlib import md5
 import logging
+from typing import Type
 
 from docx import Document
 from docx.text.paragraph import Paragraph
 
+from ingestion_service.src.core.document_processors.data_models.processor_config import ProcessorConfig
 from ingestion_service.src.core.document_processors.base_processor import DocProcessor
 from ingestion_service.src.core.document_processors.data_models.document_processor_models import (MetadataModel,
                                                                                                   ChunkModel)
 
 
-logger = logging.getLogger("DocParser")
+logger = logging.getLogger("DocProcessor")
 
 
 class DOCXProcessor(DocProcessor):
     """Класс, реализующий методы для обработки
     .docx файлов
     """
+
+    def __init__(self, config: Type[ProcessorConfig]):
+        self.min_paragraphs_len=config.min_paragraphs_len
+        self.min_len_for_join=config.min_len_for_join
+        self.min_len_for_split=config.min_len_for_split
+        self.max_len_for_chunk=config.max_len_for_chunk
 
     @staticmethod
     def __normalize(raw_text: str) -> str:
@@ -52,36 +60,29 @@ class DOCXProcessor(DocProcessor):
 
         return text
 
-    @staticmethod
+
     def __join_short_split_long_paragraphs(
+            self,
             paragraphs: List[Paragraph],
-            min_paragraphs_len: int = 20,
-            min_len_for_join: int = 70,
-            min_len_for_split: int = 200,
-            max_len_for_chunk: int = 100
     ) -> List[str]:
         """
         Объединение коротких и разделение длинных параграфов
         :param paragraphs:  Список текстов параграфов
-        :param min_paragraphs_len: Минимальная длинна параграфа
-        :param min_len_for_join: Минимальная длина для объединения параграфов
-        :param min_len_for_split: Максимальная длина параграфа перед разделением
-        :param max_len_for_chunk: Максимальный размер чанка после разделения
         :return:
         """
         logger.debug(f"Всего параграфов: {len(paragraphs)}")
-        logger.debug(f"Выполняется фильтрация коротких параграфов (менее {min_paragraphs_len} символов), а также"
-                     f"слияние параграфов длинной до {min_len_for_join}...")
+        logger.debug(f"Выполняется фильтрация коротких параграфов (менее {self.min_paragraphs_len} символов), а также"
+                     f"слияние параграфов длинной до {self.min_len_for_join}...")
         cur_chunk = ""
         merged = []
         for paragraph in paragraphs:
             paragraph_stripped = paragraph.text.strip()
 
             # Пропускаем слишком короткие параграфы
-            if not paragraph_stripped or len(paragraph_stripped) < min_paragraphs_len:
+            if not paragraph_stripped or len(paragraph_stripped) < self.min_paragraphs_len:
                 continue
 
-            if len(cur_chunk) <= min_len_for_join:
+            if len(cur_chunk) <= self.min_len_for_join:
                 if cur_chunk:
                     cur_chunk = f"{cur_chunk} {paragraph_stripped}"
                 else:
@@ -96,13 +97,13 @@ class DOCXProcessor(DocProcessor):
 
         final_chunks = []
 
-        logger.debug(f"Выполняется разделение параграфов длинной  от {min_len_for_split} ...")
+        logger.debug(f"Выполняется разделение параграфов длинной  от {self.min_len_for_split} ...")
         for paragraph in merged:
             paragraph_stripped = paragraph.strip()
             if not paragraph_stripped:
                 continue
 
-            if len(paragraph_stripped) <= min_len_for_split:
+            if len(paragraph_stripped) <= self.min_len_for_split:
                 final_chunks.append(paragraph_stripped)
                 continue
 
@@ -116,7 +117,7 @@ class DOCXProcessor(DocProcessor):
                 if sent and all(c in '.,!?;:()[]{}"\' ' for c in sent):
                     continue
 
-                if len(cur_chunk) + len(sent) + 1 <= max_len_for_chunk:
+                if len(cur_chunk) + len(sent) + 1 <= self.max_len_for_chunk:
                     if cur_chunk:
                         cur_chunk = f"{cur_chunk} {sent}"
                     else:
@@ -193,7 +194,7 @@ class DOCXProcessor(DocProcessor):
 
 
 def main():
-
+    from ingestion_service.src.core.document_processors.config import config
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s | %(levelname)s | %(name)s : %(message)s",
@@ -205,7 +206,7 @@ def main():
     with open(file_path, 'rb') as f:
         binary_file = f.read()
 
-    parser = DOCXProcessor()
+    parser = DOCXProcessor(config)
     chunks = parser.parse(binary_file)
 
 

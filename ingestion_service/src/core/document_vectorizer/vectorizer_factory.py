@@ -22,7 +22,7 @@ class VectorizerFactory:
         if model_type not in cls._vectorizer_classes:
             raise ValueError(f"Неизвестный тип: {model_type}")
 
-        logger.debug("Инициализация векторизатора config.model_type.value")
+        logger.debug(f"Инициализация векторизатора {config.model_type.value}")
         vectorizer_class = cls._vectorizer_classes.get(model_type)
 
         return vectorizer_class(config)
