@@ -1,7 +1,10 @@
 import io
+import sys
 import re
+from pathlib import Path
 from typing import List
 from hashlib import md5
+import logging
 
 from docx import Document
 from docx.text.paragraph import Paragraph
@@ -9,6 +12,9 @@ from docx.text.paragraph import Paragraph
 from ingestion_service.src.core.document_processors.base_processor import DocProcessor
 from ingestion_service.src.core.document_processors.data_models.document_processor_models import (MetadataModel,
                                                                                                   ChunkModel)
+
+
+logger = logging.getLogger("DocParser")
 
 
 class DOCXProcessor(DocProcessor):
@@ -63,7 +69,9 @@ class DOCXProcessor(DocProcessor):
         :param max_len_for_chunk: Максимальный размер чанка после разделения
         :return:
         """
-
+        logger.debug(f"Всего параграфов: {len(paragraphs)}")
+        logger.debug(f"Выполняется фильтрация коротких параграфов (менее {min_paragraphs_len} символов), а также"
+                     f"слияние параграфов длинной до {min_len_for_join}...")
         cur_chunk = ""
         merged = []
         for paragraph in paragraphs:
@@ -84,9 +92,11 @@ class DOCXProcessor(DocProcessor):
                 cur_chunk = paragraph_stripped
         if cur_chunk:
             merged.append(cur_chunk)
+        logger.debug(f"Фильтрация и слияние выполнены. Всего параграфов: {len(merged)}")
 
         final_chunks = []
 
+        logger.debug(f"Выполняется разделение параграфов длинной  от {min_len_for_split} ...")
         for paragraph in merged:
             paragraph_stripped = paragraph.strip()
             if not paragraph_stripped:
@@ -117,6 +127,8 @@ class DOCXProcessor(DocProcessor):
                     cur_chunk = sent
             if cur_chunk:
                 final_chunks.append(cur_chunk)
+
+        logger.debug(f"Обработка параграфов закончена. Всего параграфов {len(final_chunks)}")
 
         return final_chunks
 
@@ -157,6 +169,7 @@ class DOCXProcessor(DocProcessor):
         Фильтрация нерелевантных элементов (колонтитулы, номера страниц, изображения)
         Реконструкция логического потока текста (соединение разрывов)
         """
+        logger.info(f"получен файл {filename}. Выполняется обработка ...")
 
         binary_file = file
         file = io.BytesIO(binary_file)
@@ -173,17 +186,28 @@ class DOCXProcessor(DocProcessor):
                                                paragraph_idx=idx
                                                ))
 
+
+        logger.info(f"Обработка файла {filename} закончена. Извлечено {len(chunks)} чанков.")
+
         return chunks
 
 
 def main():
 
-    with open("../../../test_files/simple_file.docx", 'rb') as f:
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s | %(levelname)s | %(name)s : %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        stream=sys.stdout
+    )
+
+
+    file_path = Path('E:\\Denis\\OtherProjects\\RAGSystem\\ingestion_service\\test_files\\simple_file.docx')
+    with open(file_path, 'rb') as f:
         binary_file = f.read()
 
     parser = DOCXProcessor()
     chunks = parser.parse(binary_file)
-    print(chunks[0].model_dump_json(indent=2))
 
 
 if __name__ == "__main__":
