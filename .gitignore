@@ -10,8 +10,6 @@ ingestion_service/logs/*
 ingestion_service/.env
 
 
-
-ingestion_service/l
 gh_token.txt.txt
 
 
