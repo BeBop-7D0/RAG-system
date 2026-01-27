@@ -12,8 +12,6 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-
-
 def main():
 
     vectorizer = VectorizerFactory.create(vectorizer_config)
@@ -26,15 +24,9 @@ def main():
     with open(file_path, 'rb') as f:
         file_data = f.read()
 
-
     chunks = processor.parse(file_type, file_name, file_data)
 
-    logger.debug(len(chunks))
-
-    print(len(chunks[0].text))
-    print(chunks[0])
-
-
+    vectors = []
 
 
 if __name__ == "__main__":

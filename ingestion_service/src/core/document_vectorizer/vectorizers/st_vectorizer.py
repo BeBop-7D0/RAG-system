@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any, List
 import logging
 
 
@@ -66,11 +66,11 @@ class SentenceTransformerEmbedder(BaseVectorizer):
         except Exception as error_msg:
             logger.error(f"Ошибка загрузки модели {self.config.model_name}: {error_msg}")
 
-    def embed(self,  texts: List[str]) -> np.ndarray:
+    def embed(self,  texts: List[str]) -> List[List[float]]:
         """Векторизация батча текста"""
 
         if not texts:
-            return np.ndarray([])
+            return []
 
         try:
             embeddings = self.model.encode(
@@ -82,13 +82,13 @@ class SentenceTransformerEmbedder(BaseVectorizer):
                 normalize_embeddings=self.config.normalize_embeddings
             )
 
-            return embeddings
+            return embeddings.tolist()
 
         except Exception as error_msg:
             logger.error(f"Ошибка во время векторизации: {error_msg}")
             raise
 
-    def embed_single(self, text: str) -> np.ndarray:
+    def embed_single(self, text: str) -> List[float]:
         """Метод для векторизации одного текста"""
         return self.embed([text])[0]
 
@@ -131,8 +131,10 @@ def main():
 
     vectors = vectorizer.embed(texts)
 
-    print(np.shape(single_vector))
-    print(np.shape(vectors))
+    print(len(single_vector))
+    print(single_vector)
+    print(vectors)
+
 
 
 if __name__ == "__main__":

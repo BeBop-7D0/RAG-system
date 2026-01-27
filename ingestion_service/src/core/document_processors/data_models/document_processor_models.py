@@ -1,7 +1,5 @@
-import numpy as np
-
-from typing import Union
-from pydantic import BaseModel, Field
+from typing import Union, List
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class MetadataModel(BaseModel):
@@ -16,10 +14,9 @@ class MetadataModel(BaseModel):
 
 
 class ChunkModel(BaseModel):
-    text: Union[str, np.ndarray] = Field(..., description="Исходный нормализованный текст (Опционально: в виде вектора)")
-    text_sensitive_removed: Union[str, np.ndarray] = Field(..., description="Текст с удаленными чувствительными данными (Опционально: в виде вектора)")
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    text: Union[str, List[float]] = Field(..., description="Исходный нормализованный текст (Опционально: в виде вектора)")
+    text_sensitive_removed: Union[str, List[float]] = Field(..., description="Текст с удаленными чувствительными данными (Опционально: в виде вектора)")
     metadata: MetadataModel
     vectorization_text: str = Field(..., description="Указатель на текст, который будет использоваться для поиска."
                                                      "Это может быть поле text или text_sensitive_removed")
-
-

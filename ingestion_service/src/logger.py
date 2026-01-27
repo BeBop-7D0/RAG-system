@@ -18,7 +18,7 @@ def setup_logging():
         # вызова dictConfig будут отключены
         "formatters": {
             "standard": {
-                "format": "%(asctime)s | %(levelname)s | %(name)s : %(message)s",
+                "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S"
             }
         },
