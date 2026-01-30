@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+import tqdm
 
 from ingestion_service.src.logger import setup_logging
 from ingestion_service.src.core.document_processors.doc_processor_factory import DocProcessorFactory
@@ -17,7 +18,7 @@ def main():
     vectorizer = VectorizerFactory.create(vectorizer_config)
     processor = DocProcessorFactory(processor_config)
 
-    file_path = Path(__file__).parent.parent.parent / 'test_files/simple_file.docx'
+    file_path = Path(__file__).parent.parent / 'test_files/simple_file.docx'
     file_name = file_path.name
     file_type = file_path.suffix
 
@@ -26,7 +27,7 @@ def main():
 
     chunks = processor.parse(file_type, file_name, file_data)
 
-    vectors = []
+    vectors = vectorizer.embed([chunk.vectorization_value for chunk in chunks])
 
 
 if __name__ == "__main__":

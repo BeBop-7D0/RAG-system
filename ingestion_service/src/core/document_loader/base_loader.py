@@ -8,10 +8,20 @@ class BaseLoader(ABC):
     """Базовый класс для загрузчиков документов в БД"""
 
     @abstractmethod
-    def load_chunks(self, chunks: List[ChunkModel]):
+    def load_chunks(self,
+                    chunks: List[ChunkModel],
+                    vectors: List[float],
+                    collection_name: str,
+                    batch_size: int,
+                    max_retries: int
+                    ):
         """
         Метод для загрузки файла в БД
-        :param chunks: чанки для загрузки
+        :param chunks: словарь с данными чанка
+        :param vectors:  векторизованный текст
+        :param collection_name:  название коллекции
+        :param batch_size: размер батча
+        :param max_retries: макс  кол-во попыток
         :return:
         """
         pass

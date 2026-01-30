@@ -1,3 +1,4 @@
+from uuid import uuid4
 import sys
 import logging
 from typing import Dict, Any, Optional, List
@@ -5,12 +6,14 @@ from typing import Dict, Any, Optional, List
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import Batch, PointStruct
 
+from ingestion_service.src.core.document_loader.data_models.qdrant_load_statistics import LoadStatisticModel
 from ingestion_service.src.core.document_loader.base_loader import BaseLoader
 from ingestion_service.src.core.document_processors.data_models.document_processor_models import ChunkModel
 
 logger = logging.Logger("QdrantLoader")
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 
 class QdrantLoader(BaseLoader):
     """Класс для загрузки данных в Qdrant"""
@@ -108,14 +111,138 @@ class QdrantLoader(BaseLoader):
             logger.error(f"Ошибка во время удаления коллекции {collection_name}: {error_msg}.")
             return False
 
+    @staticmethod
+    def _chunk_to_point( chunk: ChunkModel, vector: List[float]) -> PointStruct:
+        """
+        Преобразует чанк в qdrant - точку
+        :param chunk: Словарь с данными чанка
+        :param vector: Векторное представление текста
+        :return: PointStruct для Qdrant
+        """
 
-    # def _chunk_to_point(self, chunk: ChunkModel, vector: L):
+        point_id = chunk.metadata.chunk_id
+        if not point_id:
+            point_id = str(uuid4())
 
-    def load_chunks(self, chunks: List[ChunkModel]) -> bool:
-        pass
+        payload = {
+            "text": chunk.text,
+            "text_sensitive_removed": chunk.text_sensitive_removed,
+            "doc_id": chunk.metadata.doc_id,
+            "chunk_id": chunk.metadata.chunk_id,
+            "source": chunk.metadata.source,
+            "chunk_index": chunk.metadata.chunk_index,
+            "char_count": chunk.metadata.char_count,
+            "word_count": chunk.metadata.word_count
+        }
 
+        return PointStruct(
+            id=point_id,
+            vecor=vector,
+            payload=payload
+        )
+
+    def load_chunks(self,
+                    chunks: List[ChunkModel],
+                    vectors: List[float],
+                    collection_name: str,
+                    batch_size: int,
+                    max_retries: int
+                    ) -> LoadStatisticModel:
+        """
+        Основной метод загрузки чанков в qdrnat
+        :param chunks: Список чанков
+        :param vectors: Список векторов (должен соответствовать chunks по порядку)
+        :param collection_name: Название коллекции
+        :param batch_size: Размер батча для загрузки (оптимально 64-256)[citation:2]
+        :param max_retries: Максимальное количество повторных попыток
+        :return: Статистика загрузки
+        """
+
+        stats = LoadStatisticModel(
+            total_chunks=len(chunks),
+            successful=0,
+            failed=0,
+            errors=[]
+        )
+
+        if len(chunks) != len(vectors):
+            error_msg = f"Количество чанков ({len(chunks)}) не соответсвует количеству векторов ({len(vectors)})"
+            logger.error(error_msg)
+            stats.errors.append(error_msg)
+            return stats
+
+        points = []
+        for chunk, vector in zip(chunks, vectors):
+            try:
+                point = self._chunk_to_point(chunk, vector)
+                points.append(point)
+            except Exception as e:
+                stats.failed += 1
+                stats.errors.append(f"Ошибка преобразования чанка {chunk.metadata.chunk_id}: {e}")
+
+        logger.debug(f"Начало загрузки {len(points)} в коллекцию {collection_name}")
+
+        for i in range(0, len(points), batch_size):
+            batch = points[i: i + batch_size]
+            batch_num = i // batch_size + 1
+            total_batches = (len(points) + batch_size - 1) // batch_size
+
+            for attempt in range(max_retries):
+                try:
+                    self.client.upsert(
+                        collection_name=collection_name,
+                        points=batch,
+                        wait=True   # ждем подтверждения
+                    )
+                    stats.successful += len(batch)
+                    logger.debug(f"Батч {batch_num} / {total_batches}  загружен ({len(batch)} точек)")
+                    break
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Попытка {attempt + 1}/{max_retries} "
+                                       f"не удалась для батча {batch_num}: {str(e)}")
+                    else:
+                        stats["failed"] += len(batch)
+                        stats["errors"].append(f"Ошибка загрузки батча {batch_num}: {str(e)}")
+                        logger.error(f"Не удалось загрузить батч {batch_num} "
+                                     f"после {max_retries} попыток: {str(e)}")
+        self.__enable_indexing(collection_name)
+        return stats
+
+    def __enable_indexing(self, collection_name: str, m: int = 16) -> bool:
+        """
+        Включение индексации после завершения загрузки.
+
+        :param collection_name: Название коллекции
+        :param m: Параметр HNSW (количество связей, обычно 16 или 32)[citation:3][citation:8]
+        :return: Успешность операции
+        """
+        try:
+            self.client.update_collection(
+                collection_name=collection_name,
+                hnsw_config=models.HnswConfigDiff(m=m)
+            )
+            logger.info(f"Индексация HNSW включена для коллекции {collection_name} с m={m}")
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка включения индексации для {collection_name}: {str(e)}")
+            return False
+
+    @property
     def loader_info(self) -> Dict[str, Any]:
-        pass
+        return {
+            "name": "QdrantLoader",
+            "description": "Загрузчик чанков в векторную БД Qdrant",
+            "supports_batch": True,
+            "supports_metadata": True,
+            "recommended_batch_size": 100
+        }
+
+    def __del__(self):
+        """Закрытие соединения при удалении объекта"""
+        if hasattr(self, 'client'):
+            self.client.close()
+
 
 
 def main():
@@ -131,7 +258,7 @@ def main():
         collection_name='test_collection',
         vector_size=512
     )
-    loader.delete_collection('test_collection')
+    # loader.delete_collection('test_collection')
 
 
 if __name__ == "__main__":

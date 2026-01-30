@@ -20,3 +20,12 @@ class ChunkModel(BaseModel):
     metadata: MetadataModel
     vectorization_text: str = Field(..., description="Указатель на текст, который будет использоваться для поиска."
                                                      "Это может быть поле text или text_sensitive_removed")
+
+    @property
+    def vectorization_value(self):
+        if self.vectorization_text == 'text':
+            return self.text
+        elif self.vectorization_text == 'text_sensitive_removed':
+            return self.text_sensitive_removed
+        else:
+            raise ValueError("Некорректное значение vectorization_text")

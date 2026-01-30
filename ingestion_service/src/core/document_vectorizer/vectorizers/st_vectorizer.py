@@ -131,11 +131,6 @@ def main():
 
     vectors = vectorizer.embed(texts)
 
-    print(len(single_vector))
-    print(single_vector)
-    print(vectors)
-
-
 
 if __name__ == "__main__":
     main()
