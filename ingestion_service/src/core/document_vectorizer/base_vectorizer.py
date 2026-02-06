@@ -7,11 +7,11 @@ import numpy as np
 class BaseVectorizer(ABC):
     """Базовый класс для всех векторизатовров"""
     @abstractmethod
-    def embed_single(self, text: str) -> np.ndarray:
+    def embed_single(self, text: str) -> List[float]:
         """Создание эмбединга для одного текста"""
 
     @abstractmethod
-    def embed(self,  texts: List[str]) -> np.ndarray:
+    def embed(self,  texts: List[str]) -> List[List[float]]:
         """Создание эмбедингов для списка текстов"""
 
     @property

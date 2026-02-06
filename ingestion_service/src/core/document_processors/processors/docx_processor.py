@@ -1,3 +1,4 @@
+from uuid import uuid4
 import io
 import sys
 import re
@@ -149,7 +150,7 @@ class DOCXProcessor(DocProcessor):
 
         metadata = MetadataModel(
             doc_id=file_hash,
-            chunk_id=f"{file_hash}_chunk_{paragraph_idx}",
+            chunk_id=str(uuid4()),
             source=filename,
             chunk_index=paragraph_idx,
             char_count=char_count,

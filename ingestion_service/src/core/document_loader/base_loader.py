@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
 
 from ingestion_service.src.core.document_processors.data_models.document_processor_models import ChunkModel
@@ -10,9 +10,8 @@ class BaseLoader(ABC):
     @abstractmethod
     def load_chunks(self,
                     chunks: List[ChunkModel],
-                    vectors: List[float],
+                    vectors: List[List[float]],
                     collection_name: str,
-                    batch_size: int,
                     max_retries: int
                     ):
         """
@@ -34,4 +33,13 @@ class BaseLoader(ABC):
         Получение информации по модели загрузчика
         :return:
         """
+        pass
+
+    @abstractmethod
+    def create_collection(self,
+                          collection_name: str,
+                          vector_size: int,
+                          distance: Optional[Any],
+                          on_disk: Optional[Any],
+                          disable_indexing: Optional[Any]) -> bool:
         pass

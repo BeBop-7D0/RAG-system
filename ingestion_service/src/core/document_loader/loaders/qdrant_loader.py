@@ -1,11 +1,12 @@
 from uuid import uuid4
 import sys
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 
 from qdrant_client import QdrantClient, models
-from qdrant_client.http.models import Batch, PointStruct
+from qdrant_client.http.models import PointStruct
 
+from ingestion_service.src.core.document_loader.data_models.loader_config import LoaderConfig
 from ingestion_service.src.core.document_loader.data_models.qdrant_load_statistics import LoadStatisticModel
 from ingestion_service.src.core.document_loader.base_loader import BaseLoader
 from ingestion_service.src.core.document_processors.data_models.document_processor_models import ChunkModel
@@ -19,28 +20,24 @@ class QdrantLoader(BaseLoader):
     """Класс для загрузки данных в Qdrant"""
 
     def __init__(self,
-                 host: str = "localhost",
-                 port: int = 6333,
-                 https: bool = False,
-                 api_key: Optional[str] = None,
-                 prefix: Optional[str] = None,
-                 timeout: int = 10
+                 config: LoaderConfig
                  ):
-        """
-        Инициализация клиента Qdrant.
 
-        :param host: Хост Qdrant
-        :param port: Порт Qdrant
-        :param https: Использовать HTTPS
-        :param api_key: API ключ для Qdrant Cloud
-        :param prefix: Префикс для URL (для Qdrant Cloud)
-        :param timeout: Таймаут подключения
-        """
+        self.host = config.host
+        self.port = config.port
+        self.https = config.https
+        self.api_key = config.api_key
+        self.prefix = config.prefix
+        self.timeout = config.timeout
+        self.batch_size = config.batch_size
+
+
         self.client = QdrantClient(
-            url=host if host.startswith('http') else f"{'https' if https else 'http'}://{host}:{port}",
-            api_key=api_key,
-            prefix=prefix,
-            timeout=timeout
+            url=self.host if self.host.startswith('http') else f"{'https' if self.https else 'http'}://{self.host}:"
+                                                               f"{self.port}",
+            api_key=self.api_key,
+            prefix=self.prefix,
+            timeout=self.timeout
         )
 
     def create_collection(self,
@@ -137,15 +134,14 @@ class QdrantLoader(BaseLoader):
 
         return PointStruct(
             id=point_id,
-            vecor=vector,
+            vector=vector,
             payload=payload
         )
 
     def load_chunks(self,
                     chunks: List[ChunkModel],
-                    vectors: List[float],
+                    vectors: List[List[float]],
                     collection_name: str,
-                    batch_size: int,
                     max_retries: int
                     ) -> LoadStatisticModel:
         """
@@ -153,7 +149,6 @@ class QdrantLoader(BaseLoader):
         :param chunks: Список чанков
         :param vectors: Список векторов (должен соответствовать chunks по порядку)
         :param collection_name: Название коллекции
-        :param batch_size: Размер батча для загрузки (оптимально 64-256)[citation:2]
         :param max_retries: Максимальное количество повторных попыток
         :return: Статистика загрузки
         """
@@ -182,10 +177,10 @@ class QdrantLoader(BaseLoader):
 
         logger.debug(f"Начало загрузки {len(points)} в коллекцию {collection_name}")
 
-        for i in range(0, len(points), batch_size):
-            batch = points[i: i + batch_size]
-            batch_num = i // batch_size + 1
-            total_batches = (len(points) + batch_size - 1) // batch_size
+        for i in range(0, len(points), self.batch_size):
+            batch = points[i: i + self.batch_size]
+            batch_num = i // self.batch_size + 1
+            total_batches = (len(points) + self.batch_size - 1) // self.batch_size
 
             for attempt in range(max_retries):
                 try:
@@ -202,8 +197,8 @@ class QdrantLoader(BaseLoader):
                         logger.warning(f"Попытка {attempt + 1}/{max_retries} "
                                        f"не удалась для батча {batch_num}: {str(e)}")
                     else:
-                        stats["failed"] += len(batch)
-                        stats["errors"].append(f"Ошибка загрузки батча {batch_num}: {str(e)}")
+                        stats.failed += len(batch)
+                        stats.errors.append(f"Ошибка загрузки батча {batch_num}: {str(e)}")
                         logger.error(f"Не удалось загрузить батч {batch_num} "
                                      f"после {max_retries} попыток: {str(e)}")
         self.__enable_indexing(collection_name)
@@ -246,6 +241,9 @@ class QdrantLoader(BaseLoader):
 
 
 def main():
+
+    from ingestion_service.src.core.document_loader.load_config import config
+
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s | %(levelname)s | %(name)s : %(message)s",
@@ -253,14 +251,13 @@ def main():
         stream=sys.stdout
     )
 
-    loader = QdrantLoader()
-    loader.create_collection(
-        collection_name='test_collection',
-        vector_size=512
-    )
-    # loader.delete_collection('test_collection')
+    loader = QdrantLoader(config)
+    # loader.create_collection(
+    #     collection_name='test_collection',
+    #     vector_size=512
+    # )
+    loader.delete_collection('test_collection')
 
 
 if __name__ == "__main__":
-
     main()
