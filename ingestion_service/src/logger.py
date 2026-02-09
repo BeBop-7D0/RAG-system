@@ -13,11 +13,10 @@ logger_settings_path  = Path(__file__).parent / 'logger_settings.json'
 with open(logger_settings_path, 'rb') as setting_binary:
     logger_settings = json.load(setting_binary)
 
-print(logger_settings)
 
 def setup_logging():
     log_level = logger_settings.get("log_level", "DEBUG").upper()
-    log_path = logger_settings.get('log_dir', './logs')
+    log_path = Path(logger_settings.get('log_dir', './logs'))
     log_path.mkdir(parents=True, exist_ok=True)
 
     logging_config = {
