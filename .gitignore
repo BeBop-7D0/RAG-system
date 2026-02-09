@@ -3,22 +3,25 @@
 .venv/
 venv/
 # ========================================
-# ===========Ingestion Service===========
+
+# ===========Ingestion Service============
 !ingestion_service/test_files/.gitkeep
 ingestion_service/test_files/*
-
 !ingestion_service/logs/.gitkeep
 ingestion_service/logs/*
-
 !ingestion_service/models_cache/.gitkeep
 ingestion_service/models_cache/*
-
 ingestion_service/.env
 # ========================================
-# =============RAG Serivce================
 
+# =============RAG Serivce================
 rag_service/.env
 # ========================================
+
+# =============Vectorization Serivce================
+vectorization_service/.env
+# ========================================
+
 # =================INFRA==================
 infra/Qdrant/storage/*
 !infra/Qdrant/storage/.gitkeep

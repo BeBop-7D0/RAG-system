@@ -10,7 +10,8 @@ from ingestion_service.src.core.document_loader.load_config import config as loa
 from ingestion_service.src.core.document_loader.loader_factory import LoaderFactory
 
 setup_logging()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Ingestion Service")
+
 
 
 def main():
