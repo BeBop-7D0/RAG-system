@@ -3,7 +3,7 @@ from os import getenv
 from pathlib import Path
 from dotenv import load_dotenv
 
-from vectorization_service.src.vectorizer.data_models.embedding_config import EmbeddingConfig, EmbeddingModelType
+from vectorization_service.src.data_models.embedding_config import EmbeddingConfig, EmbeddingModelType
 
 
 load_dotenv()

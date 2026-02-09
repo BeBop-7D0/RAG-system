@@ -7,7 +7,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 from vectorization_service.src.vectorizer.base_vectorizer import BaseVectorizer
-from vectorization_service.src.vectorizer.data_models.embedding_config import EmbeddingConfig
+from vectorization_service.src.data_models.embedding_config import EmbeddingConfig
 
 
 logger = logging.getLogger('ChunkVectorizer')
