@@ -1,7 +1,8 @@
+# ==============Project==================
 .idea/
 .venv/
 venv/
-
+# ========================================
 # ===========Ingestion Service===========
 !ingestion_service/test_files/.gitkeep
 ingestion_service/test_files/*
@@ -14,10 +15,13 @@ ingestion_service/models_cache/*
 
 ingestion_service/.env
 # ========================================
+# =============RAG Serivce================
 
-gh_token.txt.txt
-
-
+rag_service/.env
+# ========================================
+# =================INFRA==================
 infra/Qdrant/storage/*
 !infra/Qdrant/storage/.gitkeep
+# ========================================
 
+gh_token.txt.txt
