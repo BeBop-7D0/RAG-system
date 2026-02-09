@@ -1,3 +1,4 @@
+import json
 import logging.config
 from dotenv import load_dotenv
 import os
@@ -7,9 +8,16 @@ from pathlib import Path
 load_dotenv()
 
 
+logger_settings_path  = Path(__file__).parent / 'logger_settings.json'
+
+with open(logger_settings_path, 'rb') as setting_binary:
+    logger_settings = json.load(setting_binary)
+
+print(logger_settings)
+
 def setup_logging():
-    log_level = os.getenv('INGESTION_SERVICE_LOG_LEVEL', 'INFO').upper()
-    log_path = Path(os.getenv('INGESTION_SERVICE_LOG_PATH', './logs'))
+    log_level = logger_settings.get("log_level", "DEBUG").upper()
+    log_path = logger_settings.get('log_dir', './logs')
     log_path.mkdir(parents=True, exist_ok=True)
 
     logging_config = {
@@ -18,8 +26,8 @@ def setup_logging():
         # вызова dictConfig будут отключены
         "formatters": {
             "standard": {
-                "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S"
+                "format": logger_settings.get("format"),
+                "datefmt": logger_settings.get("datefmt"),
             }
         },
         "handlers": {   # настройки записи логов
@@ -33,8 +41,8 @@ def setup_logging():
                 "level": log_level,
                 "class": "logging.handlers.RotatingFileHandler",
                 "filename": str(log_path / "current.log"),
-                "maxBytes": 10_000_000,  # 10 MB
-                "backupCount": 5,
+                "maxBytes": logger_settings.get("max_bytes"),
+                "backupCount": logger_settings.get("backup_count"),
                 "formatter": "standard"
             }
         },

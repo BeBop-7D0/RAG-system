@@ -1,0 +1,6 @@
+{
+  "min_paragraphs_len": 15,
+  "min_len_for_join": 50,
+  "min_len_for_split": 400,
+  "max_len_for_chunk": 100
+}

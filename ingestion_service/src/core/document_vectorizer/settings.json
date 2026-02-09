@@ -1,0 +1,9 @@
+{
+  "model_type": "sentence_transformers",
+  "model_name": "all-MiniLM-L6-v2",
+  "batch_size": 32,
+  "normalize_embeddings": true,
+  "device": "cpu",
+  "cache_dir": "E:\\Denis\\OtherProjects\\RAGSystem\\ingestion_service\\models_cache",
+  "max_seq_length": 512
+}
