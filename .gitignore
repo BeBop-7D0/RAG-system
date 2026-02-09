@@ -18,7 +18,9 @@ ingestion_service/.env
 rag_service/.env
 # ========================================
 
-# =============Vectorization Serivce================
+# =============Vectorization Serivce======
+!vectorization_service/models_cache/.gitkeep
+vectorization_service/models_cache/*
 vectorization_service/.env
 # ========================================
 

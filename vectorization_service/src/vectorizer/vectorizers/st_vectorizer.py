@@ -4,11 +4,10 @@ import logging
 
 
 import torch
-import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from ingestion_service.src.core.document_vectorizer.base_vectorizer import BaseVectorizer
-from ingestion_service.src.core.document_vectorizer.data_models.embedding_config import EmbeddingConfig
+from vectorization_service.src.vectorizer.base_vectorizer import BaseVectorizer
+from vectorization_service.src.vectorizer.data_models.embedding_config import EmbeddingConfig
 
 
 logger = logging.getLogger('ChunkVectorizer')
@@ -111,7 +110,7 @@ class SentenceTransformerEmbedder(BaseVectorizer):
 
 def main():
 
-    from ingestion_service.src.core.document_vectorizer.config import config
+    from vectorization_service.src.vectorizer.load_config import config
 
     logging.basicConfig(
         level=logging.DEBUG,

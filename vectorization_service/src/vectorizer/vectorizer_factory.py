@@ -1,9 +1,9 @@
 from logging import Logger
 from typing import Dict, Type, List
 
-from ingestion_service.src.core.document_vectorizer.data_models.embedding_config import EmbeddingConfig
-from ingestion_service.src.core.document_vectorizer.base_vectorizer import BaseVectorizer
-from ingestion_service.src.core.document_vectorizer.vectorizers.st_vectorizer import SentenceTransformerEmbedder
+from vectorization_service.src.vectorizer.data_models.embedding_config import EmbeddingConfig
+from vectorization_service.src.vectorizer.base_vectorizer import BaseVectorizer
+from vectorization_service.src.vectorizer.vectorizers.st_vectorizer import SentenceTransformerEmbedder
 
 
 logger = Logger("VectorizerFactory")

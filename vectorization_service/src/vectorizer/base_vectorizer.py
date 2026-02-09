@@ -1,8 +1,6 @@
 from abc import abstractmethod, ABC
 from typing import List, Dict, Any
 
-import numpy as np
-
 
 class BaseVectorizer(ABC):
     """Базовый класс для всех векторизатовров"""

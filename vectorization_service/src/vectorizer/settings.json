@@ -4,6 +4,6 @@
   "batch_size": 32,
   "normalize_embeddings": true,
   "device": "cpu",
-  "cache_dir": "E:\\Denis\\OtherProjects\\RAGSystem\\ingestion_service\\models_cache",
+  "cache_dir": "E:\\Denis\\OtherProjects\\RAGSystem\\vectorization_service\\models_cache",
   "max_seq_length": 512
 }

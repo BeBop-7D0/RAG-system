@@ -1,15 +1,15 @@
 import logging
 
-from ingestion_service.src.logger import setup_logging
+from vectorization_service.src.logger import setup_logging
 
 
 setup_logging()
-logger = logging.getLogger("RAG Service")
+logger = logging.getLogger("Vectorization Service")
 
 
 def main():
 
-    logger.debug("This is RAG Service")
+    logger.debug("This is Vectorization Service")
 
 
 if __name__ == "__main__":

@@ -4,8 +4,6 @@ from pathlib import Path
 from ingestion_service.src.logger import setup_logging
 from ingestion_service.src.core.document_processors.doc_processor_factory import DocProcessorFactory
 from ingestion_service.src.core.document_processors.load_config import config as processor_config
-from ingestion_service.src.core.document_vectorizer.vectorizer_factory import VectorizerFactory
-from ingestion_service.src.core.document_vectorizer.load_config import config as vectorizer_config
 from ingestion_service.src.core.document_loader.load_config import config as loader_config
 from ingestion_service.src.core.document_loader.loader_factory import LoaderFactory
 
@@ -16,7 +14,7 @@ logger = logging.getLogger("Ingestion Service")
 
 def main():
 
-    vectorizer = VectorizerFactory.create(vectorizer_config)
+    # vectorizer = VectorizerFactory.create(vectorizer_config)
     processor = DocProcessorFactory(processor_config)
     loader = LoaderFactory.create(loader_config)
 
