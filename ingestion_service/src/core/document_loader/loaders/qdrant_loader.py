@@ -31,7 +31,6 @@ class QdrantLoader(BaseLoader):
         self.timeout = config.timeout
         self.batch_size = config.batch_size
 
-
         self.client = QdrantClient(
             url=self.host if self.host.startswith('http') else f"{'https' if self.https else 'http'}://{self.host}:"
                                                                f"{self.port}",

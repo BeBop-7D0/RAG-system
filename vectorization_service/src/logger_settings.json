@@ -2,7 +2,7 @@
   "log_level": "DEBUG",
   "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
   "datefmt": "%Y-%m-%d %H:%M:%S",
-  "log_dir": "E:\\Denis\\OtherProjects\\RAGSystem\\vectorization_service\\logs",
+  "log_dir": "..\\logs",
   "max_bytes": 10000000,
   "backup_count": 5
 }

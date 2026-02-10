@@ -21,5 +21,6 @@ if not port or not port.isdigit():
 
 config = AppConfig(
     host=getenv("VECTORIZATION_SERVICE_APP_HOST", "localhost"),
-    port=port
+    port=port,
+    name=settings.get("VectorizerApp", 'SanicApp')
 )
