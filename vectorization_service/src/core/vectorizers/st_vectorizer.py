@@ -6,7 +6,7 @@ import logging
 import torch
 from sentence_transformers import SentenceTransformer
 
-from vectorization_service.src.vectorizer.base_vectorizer import BaseVectorizer
+from vectorization_service.src.core.base_vectorizer import BaseVectorizer
 from vectorization_service.src.data_models.embedding_config import EmbeddingConfig
 
 
@@ -110,7 +110,7 @@ class SentenceTransformerEmbedder(BaseVectorizer):
 
 def main():
 
-    from vectorization_service.src.vectorizer.load_config import config
+    from vectorization_service.src.core.load_config import config
 
     logging.basicConfig(
         level=logging.DEBUG,
